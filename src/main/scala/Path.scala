@@ -149,6 +149,30 @@ object Path {
     }
   }
 
+  object mkAbsFile {
+    def apply[B,T](f: FilePath): Path[Abs,File] = macro implMkAbsFile[B,T]
+    def implMkAbsFile[B,T](c: blackbox.Context)(f: c.Expr[FilePath]) = {
+      import c.universe._
+      val x = c.eval(c.Expr[FilePath](c.untypecheck(f.tree.duplicate.asInstanceOf[c.Tree])))
+      parseAbsFile(x) match {
+        case -\/(error) => c.abort(c.enclosingPosition, "Invalid absolute file.")
+        case \/-(p) => c.Expr[Path[Abs,File]](q"""Path.Path(${p.f})""")
+      }
+    }
+  }
+
+  object mkRelFile {
+    def apply[B,T](f: FilePath): Path[Rel,File] = macro implMkRelFile[B,T]
+    def implMkRelFile[B,T](c: blackbox.Context)(f: c.Expr[FilePath]) = {
+      import c.universe._
+      val x = c.eval(c.Expr[FilePath](c.untypecheck(f.tree.duplicate.asInstanceOf[c.Tree])))
+      parseRelFile(x) match {
+        case -\/(error) => c.abort(c.enclosingPosition, "Invalid relative file.")
+        case \/-(p) => c.Expr[Path[Rel,File]](q"""Path.Path(${p.f})""")
+      }
+    }
+  }
+
 }
 
 
