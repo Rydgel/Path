@@ -125,6 +125,21 @@ object Path {
   private def normalizeFile(f: FilePath): FilePath =
     clean(normalize(f))
 
+  private def stripPrefix(prefix: String, s: String): Option[String] =
+    if (s.startsWith(prefix)) s.substring(prefix.length).some
+    else none[String]
+
+  def stripDir[B,T](p: Path[B,Dir], l: Path[B,T]): \/[CouldntStripPrefixDir, Path[Rel,T]] =
+    stripPrefix(p.f, l.f) match {
+      case None => CouldntStripPrefixDir(p.f, l.f).left
+      case Some("") => CouldntStripPrefixDir(p.f, l.f).left
+      case Some(x) => Path[Rel,T](x).right[CouldntStripPrefixDir]
+    }
+
+  def isParentOf[B,T](p: Path[B,Dir], l: Path[B,T]): Boolean = {
+    stripDir(p, l).isRight
+  }
+
   object mkAbsDir {
     def apply[B,T](f: FilePath): Path[Abs,Dir] = macro implMkAbsDir[B,T]
     def implMkAbsDir[B,T](c: blackbox.Context)(f: c.Expr[FilePath]) = {
